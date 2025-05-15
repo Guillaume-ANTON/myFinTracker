@@ -3,6 +3,7 @@ from .db import db
 class Transaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     ticker = db.Column(db.String(10), nullable=False)
+    isin = db.Column(db.String(20), nullable=False)
     quantity = db.Column(db.Float, nullable=False)
     price = db.Column(db.Float, nullable=False)
     fees = db.Column(db.Float, default=0.0)
@@ -14,6 +15,7 @@ class Transaction(db.Model):
         return {
             "id": self.id,
             "ticker": self.ticker,
+            "isin": self.isin,
             "quantity": self.quantity,
             "price": self.price,
             "fees": self.fees,
