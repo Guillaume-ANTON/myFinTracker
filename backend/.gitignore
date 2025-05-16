@@ -1,0 +1,9 @@
+# Base de données SQLite
+*.db
+*.sqlite
+
+# Dossiers/Autres fichiers générés
+__pycache__/
+*.pyc
+venv/
+.env
