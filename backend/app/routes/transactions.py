@@ -10,6 +10,13 @@ def get_transactions():
     transactions = Transaction.query.all()
     return jsonify([t.to_dict() for t in transactions])
 
+@transactions_bp.route('/<int:id>', methods=['GET'])
+def get_transaction(id):
+    transaction = Transaction.query.get(id)
+    if transaction:
+        return jsonify(transaction.to_dict())
+    return jsonify({'error': 'Transaction not found'}), 404
+
 @transactions_bp.route('', methods=['POST'])
 def add_transaction():
     data = request.get_json()
