@@ -32,4 +32,14 @@ def add_transaction():
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
+@transactions_bp.route('/<int:id>', methods=['DELETE'])
+def delete_transaction(id):
+    transaction = Transaction.query.get(id)
+
+    if transaction:
+        db.session.delete(transaction)
+        db.session.commit()
+        return '', 204  # No Content
+
+    return jsonify({'error': 'Transaction not found'}), 404
 
