@@ -5,6 +5,7 @@ from collections import defaultdict
 
 portfolio_bp = Blueprint('portfolio', __name__, url_prefix='/portfolio')
 
+
 @portfolio_bp.route('', methods=['GET'])
 def get_portfolio():
     transactions = Transaction.query.all()
@@ -28,17 +29,14 @@ def get_portfolio():
         quantity = data["quantity"]
         total_cost = data["total_cost"]
         if quantity <= 0:
-            continue  # on ignore les lignes à 0 ou négatives
+            continue
 
         avg_price = total_cost / quantity
 
         try:
             stock = yf.Ticker(isin)
             hist = stock.history(period='1d')
-            if hist.empty:
-                market_price = None
-            else:
-                market_price = hist['Close'].iloc[-1]
+            market_price = hist['Close'].iloc[-1] if not hist.empty else None
         except Exception:
             market_price = None
 
@@ -59,3 +57,49 @@ def get_portfolio():
         })
 
     return jsonify(portfolio_summary)
+
+
+@portfolio_bp.route('/summary', methods=['GET'])
+def get_portfolio_summary():
+    transactions = Transaction.query.all()
+    holdings = defaultdict(lambda: {"quantity": 0, "total_cost": 0})
+
+    for tx in transactions:
+        isin = tx.isin.upper()
+        qty = tx.quantity
+        price = tx.price
+
+        if tx.type == 'buy':
+            holdings[isin]["quantity"] += qty
+            holdings[isin]["total_cost"] += qty * price
+        elif tx.type == 'sell':
+            holdings[isin]["quantity"] -= qty
+            holdings[isin]["total_cost"] -= qty * price
+
+    total_value = 0.0
+    total_gain = 0.0
+
+    for isin, data in holdings.items():
+        quantity = data["quantity"]
+        total_cost = data["total_cost"]
+        if quantity <= 0:
+            continue
+
+        try:
+            stock = yf.Ticker(isin)
+            hist = stock.history(period='1d')
+            market_price = hist['Close'].iloc[-1] if not hist.empty else None
+        except Exception:
+            market_price = None
+
+        if market_price:
+            current_value = quantity * market_price
+            gain = current_value - total_cost
+
+            total_value += current_value
+            total_gain += gain
+
+    return jsonify({
+        "total_value": round(total_value, 2),
+        "total_unrealized_gain": round(total_gain, 2)
+    })
